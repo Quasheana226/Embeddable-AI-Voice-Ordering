@@ -17,34 +17,23 @@ except LookupError:
 def clean_text(text):
     """
     Remove common English stopwords and pizza-ordering filler words from the transcript.
-    This cleans the STT output so only meaningful words (toppings, quantities, etc.) remain.
-
-    Args:
-        text (str): Raw transcript text from Watson Speech-to-Text.
-
-    Returns:
-        str: Cleaned text with stopwords removed.
+    Returns empty string if text is None (e.g. recording failed or was empty).
     """
-    # Load standard English stopwords from NLTK
-    stop_words = stopwords.words("english")
+    if not text:
+        return ""
 
-    # Extend with domain-specific filler words common in voice pizza orders
-    # These words add no value to understanding the order intent
+    stop_words = stopwords.words("english")
     stop_words.extend([
         "gimme", "lemme", "cause", "cuz", "imma", "gonna", "wanna", "please", "the", "and",
         "gotta", "hafta", "woulda", "coulda", "shoulda", "howdy", "day", "can", "could",
         "my", "mine", "I" "hey", "yoo", "deliver", "delivery", "delivered", "piece", "want",
         "send", "sent", "order", "pizza", "piz", "pizze", "address", "addrez", "to", "too"
     ])
-
-    # Remove each word if it's a stopword (case-insensitive),
-    # and strip out any "X" or "/" characters from remaining words
     clean_texts = " ".join([
         word.replace("X", "").replace("/", "")
         for word in text.split()
         if word.lower() not in stop_words
     ])
-
     return clean_texts
 
 
@@ -170,6 +159,6 @@ def text_to_speech(texts, name, language):
         print("Creating file ---", name)
 
     # Write the raw audio bytes to disk as a .wav file
-    # mode="bx" ensures we don't accidentally overwrite an existing file
-    with open(name, mode="bx") as f:
+    # mode="wb" ensures we don't accidentally overwrite an existing file
+    with open(name, mode="wb") as f:
         f.write(request.content)
