@@ -71,34 +71,14 @@ def save_audio(file, file_name):
         file.save(audio)
     print("file uploaded successfully")
 
-
 def speech_to_text(file_name):
-    """
-    Send a .wav audio file to IBM Watson Speech-to-Text and return the transcript.
-
-    Args:
-        file_name (str): Full path to the .wav audio file.
-
-    Returns:
-        str: The transcribed text from the audio.
-    """
-    # IBM Watson STT API endpoint
     speech_to_text_url = "https://sn-watson-stt.labs.skills.network/speech-to-text/api/v1/recognize"
-
-    # Tell the API we're sending a .wav file
     headers = {"Content-Type": "audio/wav"}
-
-    # Model config:
-    # - en-US_Multimedia: optimized for English audio from mic/media sources
-    # - smart_formatting: auto-formats dates, numbers, currency in the transcript
-    # - background_audio_suppression: 0.6 filters out background noise (range 0-1)
     params = {
         "model": "en-US_Multimedia",
         "smart_formatting": "true",
         "background_audio_suppression": "0.6"
     }
-
-    # POST the audio file as binary data to the Watson STT service
     result = requests.post(
         speech_to_text_url,
         headers=headers,
@@ -106,9 +86,14 @@ def speech_to_text(file_name):
         data=open(file_name, 'rb')
     )
 
-    # Parse the JSON response and concatenate all transcript alternatives
     output = ""
     json_obj = json.loads(result.text)
+
+    # Guard: if no results key or empty results, return empty string
+    if "results" not in json_obj or not json_obj["results"]:
+        print("STT returned no results — audio may have been too short or silent")
+        return output
+
     results_data = json_obj["results"]
     for r in results_data:
         for transcript in r["alternatives"]:
