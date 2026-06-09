@@ -14,10 +14,38 @@ try:
 except LookupError:
     nltk.download("stopwords")
 
-
 def clean_text(text):
-    # TODO: Remove punctuation, special characters, and normalize whitespace
-    return None
+    """
+    Remove common English stopwords and pizza-ordering filler words from the transcript.
+    This cleans the STT output so only meaningful words (toppings, quantities, etc.) remain.
+
+    Args:
+        text (str): Raw transcript text from Watson Speech-to-Text.
+
+    Returns:
+        str: Cleaned text with stopwords removed.
+    """
+    # Load standard English stopwords from NLTK
+    stop_words = stopwords.words("english")
+
+    # Extend with domain-specific filler words common in voice pizza orders
+    # These words add no value to understanding the order intent
+    stop_words.extend([
+        "gimme", "lemme", "cause", "cuz", "imma", "gonna", "wanna", "please", "the", "and",
+        "gotta", "hafta", "woulda", "coulda", "shoulda", "howdy", "day", "can", "could",
+        "my", "mine", "I" "hey", "yoo", "deliver", "delivery", "delivered", "piece", "want",
+        "send", "sent", "order", "pizza", "piz", "pizze", "address", "addrez", "to", "too"
+    ])
+
+    # Remove each word if it's a stopword (case-insensitive),
+    # and strip out any "X" or "/" characters from remaining words
+    clean_texts = " ".join([
+        word.replace("X", "").replace("/", "")
+        for word in text.split()
+        if word.lower() not in stop_words
+    ])
+
+    return clean_texts
 
 
 def get_keywords(text):
