@@ -23,4 +23,4 @@ def tts_testing(text, file_name, language):
 
 
 # Run the test using the Kevin (en-US) voice — change languages[6] to try others
-tts_testing(texts, name, languages[6])
+tts_testing("Hello world, nice to meet you.", "my_audio.wav", languages[8])
