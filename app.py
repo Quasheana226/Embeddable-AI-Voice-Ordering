@@ -61,28 +61,6 @@ def get_info():
 
     return render_template("getInfo.html")
 
-    @app.route("/get_info_redirect", methods=["GET", "POST"])
-def get_info_redirect():
-    """
-    Confirmation step for the delivery address.
-    Cleans the raw STT transcript using clean_text(), then plays it back to the customer
-    for confirmation. Passes the cleaned address to the HTML template for display.
-    """
-    global customer_address, play_audio
-
-    # Strip stopwords from the raw address transcript for cleaner readback
-    customer_address = clean_text(raw_address)
-
-    play_audio = "info_repeat.wav"
-    result = (
-        "Just want to confirm, did ya ask for the pizza to be dropped off at " +
-        customer_address +
-        "? If not, no worries, just give the recording again button a tap."
-    )
-    text_to_speech(result, play_audio, language)
-
-    return render_template("getInfoRedirect.html", customerAddress=customer_address)
-
 
 @app.route("/get_topping", methods=["POST"])
 def get_topping():
@@ -105,19 +83,44 @@ def get_topping():
 
 # --- Checking Pages ---
 
+@app.route("/get_info_redirect", methods=["GET", "POST"])
+def get_info_redirect():
+    """
+    Confirmation step for the delivery address.
+    Cleans the raw STT transcript using clean_text(), then plays it back to the customer
+    for confirmation. Passes the cleaned address to the HTML template for display.
+    """
+    global customer_address, play_audio
+
+    # Strip stopwords from the raw address transcript for cleaner readback
+    customer_address = clean_text(raw_address)
+
+    play_audio = "info_repeat.wav"
+    result = (
+        "Just want to confirm, did ya ask for the pizza to be dropped off at " +
+        customer_address +
+        "? If not, no worries, just give the recording again button a tap."
+    )
+    text_to_speech(result, play_audio, language)
+
+    # Pass customerAddress to the HTML template so it can be displayed on screen
+    return render_template("getInfoRedirect.html", customerAddress=customer_address)
+
+
 @app.route("/get_topping_redirect", methods=["GET", "POST"])
 def get_topping_redirect():
+    """
+    Confirmation step for the pizza order.
+    Cleans the raw order transcript, extracts size and toppings via get_keywords(),
+    then reads the order back to the customer for confirmation.
+    """
     global pizza_size, pizza_topping, play_audio
 
+    # Clean stopwords from the raw order transcript
     clean_order = clean_text(raw_order)
-    result_keywords = get_keywords(clean_order)
 
-    # Guard: if no keywords were extracted, redirect back to re-record
-    if not result_keywords or not result_keywords[0]:
-        play_audio = "topping.wav"
-        return render_template("getTopping.html")
-
-    pizza_size, pizza_topping = result_keywords
+    # Use fuzzy matching to extract pizza size and toppings from the cleaned text
+    pizza_size, pizza_topping = get_keywords(clean_order)
 
     play_audio = "topping_repeat.wav"
     result = (
@@ -127,8 +130,8 @@ def get_topping_redirect():
     )
     text_to_speech(result, play_audio, language)
 
+    # Pass order details to the HTML template for display
     return render_template("getToppingRedirect.html", pizzaSize=pizza_size[0], pizzaTopping=pizza_topping)
-
 
 
 # --- Result Page ---
@@ -174,6 +177,11 @@ def get_order():
 
 @app.route("/get_info_record_wav", methods=["POST"])
 def get_info_record_wav():
+    """
+    Receives the customer's recorded address audio from the browser,
+    saves it to disk, then transcribes it using Watson STT.
+    The raw transcript is stored in raw_address for later cleaning.
+    """
     global raw_address
 
     if "info_record_wav" not in request.files:
@@ -183,12 +191,14 @@ def get_info_record_wav():
     if file.filename == "":
         return "No audio file selected"
 
+    # Save the uploaded audio blob to disk so it can be sent to Watson STT
     save_audio(file, "info_record.wav")
+
+    # Transcribe the saved audio and store the raw result
     raw_address = speech_to_text("info_record.wav")
     print("Raw address transcript:", raw_address)
 
-    # Redirect to the route instead of rendering directly
-    return redirect("/get_info_redirect")
+    return render_template("getInfoRedirect.html")
 
 
 @app.route("/get_topping_record_wav", methods=["POST"])
