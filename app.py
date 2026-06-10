@@ -152,11 +152,6 @@ def get_order():
 
 @app.route("/get_info_record_wav", methods=["POST"])
 def get_info_record_wav():
-    """
-    Receives the customer's recorded address audio from the browser,
-    saves it to disk, then transcribes it using Watson STT.
-    The raw transcript is stored in raw_address for later cleaning.
-    """
     global raw_address
 
     if "info_record_wav" not in request.files:
@@ -166,14 +161,12 @@ def get_info_record_wav():
     if file.filename == "":
         return "No audio file selected"
 
-    # Save the uploaded audio blob to disk so it can be sent to Watson STT
     save_audio(file, "info_record.wav")
-
-    # Transcribe the saved audio and store the raw result
     raw_address = speech_to_text("info_record.wav")
     print("Raw address transcript:", raw_address)
 
-    return render_template("getInfoRedirect.html")
+    # Redirect to the route instead of rendering directly
+    return redirect("/get_info_redirect")
 
 
 @app.route("/get_topping_record_wav", methods=["POST"])
