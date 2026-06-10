@@ -61,6 +61,28 @@ def get_info():
 
     return render_template("getInfo.html")
 
+    @app.route("/get_info_redirect", methods=["GET", "POST"])
+def get_info_redirect():
+    """
+    Confirmation step for the delivery address.
+    Cleans the raw STT transcript using clean_text(), then plays it back to the customer
+    for confirmation. Passes the cleaned address to the HTML template for display.
+    """
+    global customer_address, play_audio
+
+    # Strip stopwords from the raw address transcript for cleaner readback
+    customer_address = clean_text(raw_address)
+
+    play_audio = "info_repeat.wav"
+    result = (
+        "Just want to confirm, did ya ask for the pizza to be dropped off at " +
+        customer_address +
+        "? If not, no worries, just give the recording again button a tap."
+    )
+    text_to_speech(result, play_audio, language)
+
+    return render_template("getInfoRedirect.html", customerAddress=customer_address)
+
 
 @app.route("/get_topping", methods=["POST"])
 def get_topping():
