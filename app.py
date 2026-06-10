@@ -109,18 +109,17 @@ def get_info_redirect():
 
 @app.route("/get_topping_redirect", methods=["GET", "POST"])
 def get_topping_redirect():
-    """
-    Confirmation step for the pizza order.
-    Cleans the raw order transcript, extracts size and toppings via get_keywords(),
-    then reads the order back to the customer for confirmation.
-    """
     global pizza_size, pizza_topping, play_audio
 
-    # Clean stopwords from the raw order transcript
     clean_order = clean_text(raw_order)
+    result_keywords = get_keywords(clean_order)
 
-    # Use fuzzy matching to extract pizza size and toppings from the cleaned text
-    pizza_size, pizza_topping = get_keywords(clean_order)
+    # Guard: if no keywords extracted, send back to re-record
+    if not result_keywords or not result_keywords[0]:
+        play_audio = "topping.wav"
+        return render_template("getTopping.html")
+
+    pizza_size, pizza_topping = result_keywords
 
     play_audio = "topping_repeat.wav"
     result = (
@@ -130,7 +129,6 @@ def get_topping_redirect():
     )
     text_to_speech(result, play_audio, language)
 
-    # Pass order details to the HTML template for display
     return render_template("getToppingRedirect.html", pizzaSize=pizza_size[0], pizzaTopping=pizza_topping)
 
 
