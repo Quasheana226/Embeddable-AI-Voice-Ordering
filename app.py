@@ -83,28 +83,29 @@ def get_topping():
 
 # --- Checking Pages ---
 
-@app.route("/get_info_redirect", methods=["GET", "POST"])
-def get_info_redirect():
-    """
-    Confirmation step for the delivery address.
-    Cleans the raw STT transcript using clean_text(), then plays it back to the customer
-    for confirmation. Passes the cleaned address to the HTML template for display.
-    """
-    global customer_address, play_audio
+@app.route("/get_topping_redirect", methods=["GET", "POST"])
+def get_topping_redirect():
+    global pizza_size, pizza_topping, play_audio
 
-    # Strip stopwords from the raw address transcript for cleaner readback
-    customer_address = clean_text(raw_address)
+    clean_order = clean_text(raw_order)
+    result_keywords = get_keywords(clean_order)
 
-    play_audio = "info_repeat.wav"
+    # Guard: if no keywords were extracted, redirect back to re-record
+    if not result_keywords or not result_keywords[0]:
+        play_audio = "topping.wav"
+        return render_template("getTopping.html")
+
+    pizza_size, pizza_topping = result_keywords
+
+    play_audio = "topping_repeat.wav"
     result = (
-        "Just want to confirm, did ya ask for the pizza to be dropped off at " +
-        customer_address +
-        "? If not, no worries, just give the recording again button a tap."
+        "Just wanted to make sure, did ya order a " + pizza_size[0] +
+        " pizza with: " + " ".join(map(str, pizza_topping)) +
+        " on it? If not, no worries, just give the recording again button another press."
     )
     text_to_speech(result, play_audio, language)
 
-    # Pass customerAddress to the HTML template so it can be displayed on screen
-    return render_template("getInfoRedirect.html", customerAddress=customer_address)
+    return render_template("getToppingRedirect.html", pizzaSize=pizza_size[0], pizzaTopping=pizza_topping)
 
 
 @app.route("/get_topping_redirect", methods=["GET", "POST"])

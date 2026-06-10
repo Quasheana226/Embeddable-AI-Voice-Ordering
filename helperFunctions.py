@@ -38,8 +38,9 @@ def clean_text(text):
 
 
 def get_keywords(text):
-    # TODO: Extract meaningful keywords by filtering out NLTK stopwords
-    return None
+    if not text:
+        return [], []
+
 
 
 def play_local_wav_file(file_name):
